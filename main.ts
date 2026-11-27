@@ -1,35 +1,40 @@
-// The Printer Finally Answers — make.fun bounty entry.
-// Writes the entry line to $MAKEFUN_OUTPUT_DIR/entry.txt (default /output).
+// printer-answers-20261127
+//
+// make.fun bounty: "The Printer Finally Answers".
+// The printer has printed 47,312 pages. Now it gets to reply.
+// One entry, 240 characters max. This program checks the line and
+// writes it to entry.txt.
+
 import { mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 const ENTRY =
   "I have printed 47,312 pages for you. The one time you need me, you chose violence.";
+
 const MIN_CHARS = 1;
 const MAX_CHARS = 240;
 
 function checkEntry(text: string): void {
-  if (text.trim().length === 0) {
-    throw new Error("entry must not be blank");
-  }
-  if (text.length < MIN_CHARS || text.length > MAX_CHARS) {
-    throw new Error(
-      `entry must be ${MIN_CHARS} to ${MAX_CHARS} characters, got ${text.length}`,
-    );
+  if (!text) throw new Error("entry is empty");
+  if (text.length < MIN_CHARS) throw new Error("entry is too short");
+  if (text.length > MAX_CHARS) {
+    throw new Error(`entry is ${text.length} chars; the limit is ${MAX_CHARS}`);
   }
   if (text.includes("\n") || text.includes("\r")) {
     throw new Error("entry must be a single line");
   }
-  if (text !== text.trim() || text.includes("  ")) {
-    throw new Error("entry must not have leading/trailing whitespace or double spaces");
-  }
+  if (text.trim() !== text) throw new Error("entry has leading/trailing whitespace");
+  if (/\s\s/.test(text)) throw new Error("entry has a double space");
+  if (text.split(" ").length < 5) throw new Error("entry is too short to be a reply");
 }
 
 function main(): void {
   checkEntry(ENTRY);
-  const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? "/output";
-  mkdirSync(outDir, { recursive: true });
-  writeFileSync(join(outDir, "entry.txt"), ENTRY, "utf8");
+  const outputDir = resolve(process.env.MAKEFUN_OUTPUT_DIR ?? "/output");
+  mkdirSync(outputDir, { recursive: true });
+  const outputFile = join(outputDir, "entry.txt");
+  writeFileSync(outputFile, ENTRY + "\n", "utf8");
+  console.log(`entry (${ENTRY.length} chars) saved to ${outputFile}`);
 }
 
 main();
